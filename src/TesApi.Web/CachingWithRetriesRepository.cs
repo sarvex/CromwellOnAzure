@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Logging;
 using Polly;
 using Polly.Retry;
 using Tes.Repository;
@@ -19,6 +20,8 @@ namespace TesApi.Web
         private readonly object cacheLock = new object();
         private readonly IMemoryCache cache = new MemoryCache(new MemoryCacheOptions());
         private readonly IList<object> itemsPredicateCachedKeys = new List<object>();
+        private readonly ILogger logger;
+        private readonly LoggingExecutor logingExecutor;
 
         private readonly AsyncRetryPolicy retryPolicy = Policy
                 .Handle<Exception>()
@@ -28,15 +31,18 @@ namespace TesApi.Web
         /// Constructor to create a cache and retry wrapper for <see cref="IRepository{T}"/>
         /// </summary>
         /// <param name="repository"><see cref="IRepository{T}"/> to wrap with caching and retries</param>
-        public CachingWithRetriesRepository(IRepository<T> repository)
+        /// <param name="logger">The logger</param>
+        public CachingWithRetriesRepository(IRepository<T> repository, ILogger logger)
         {
             this.repository = repository;
+            this.logger = logger;
+            this.logingExecutor = new LoggingExecutor(logger);
         }
 
         /// <inheritdoc/>
         public async Task<T> CreateItemAsync(T item)
         {
-            var repositoryItem = await retryPolicy.ExecuteAsync(() => repository.CreateItemAsync(item));
+            var repositoryItem = await retryPolicy.ExecuteAsync(() => this.logingExecutor.Execute("CreateItemAsync", item.GetId(), () => repository.CreateItemAsync(item)));
             ClearAllItemsPredicateCachedKeys();
             return repositoryItem;
         }
@@ -49,7 +55,7 @@ namespace TesApi.Web
                 cache.Remove(id);
             }
 
-            await retryPolicy.ExecuteAsync(() => repository.DeleteItemAsync(id));
+            await retryPolicy.ExecuteAsync(() => this.logingExecutor.Execute("DeleteItemAsync", id, () => repository.DeleteItemAsync(id)));
             ClearAllItemsPredicateCachedKeys();
         }
 
@@ -64,7 +70,7 @@ namespace TesApi.Web
                 return true;
             }
 
-            var repositoryItemFound = await retryPolicy.ExecuteAsync(() => repository.TryGetItemAsync(id, item => repositoryItem = item));
+            var repositoryItemFound = await retryPolicy.ExecuteAsync(() => this.logingExecutor.Execute("GetItemsAsyncWithPagination", id, () => repository.TryGetItemAsync(id, item => repositoryItem = item)));
 
             if (repositoryItemFound)
             {
@@ -77,7 +83,7 @@ namespace TesApi.Web
 
         /// <inheritdoc/>
         public Task<(string, IEnumerable<T>)> GetItemsAsync(Expression<Func<T, bool>> predicate, int pageSize, string continuationToken)
-            => retryPolicy.ExecuteAsync(() => repository.GetItemsAsync(predicate, pageSize, continuationToken));
+            => retryPolicy.ExecuteAsync(() => this.logingExecutor.Execute("GetItemsAsyncWithPagination", null, () => repository.GetItemsAsync(predicate, pageSize, continuationToken)));
 
         /// <inheritdoc/>
         public async Task<IEnumerable<T>> GetItemsAsync(Expression<Func<T, bool>> predicate)
@@ -90,7 +96,7 @@ namespace TesApi.Web
                 return repositoryItems;
             }
 
-            repositoryItems = await retryPolicy.ExecuteAsync(() => repository.GetItemsAsync(predicate));
+            repositoryItems = await retryPolicy.ExecuteAsync(() => this.logingExecutor.Execute("GetItemsAsyncNoPagination", null, () => repository.GetItemsAsync(predicate)));
 
             lock (cacheLock)
             {
@@ -111,7 +117,7 @@ namespace TesApi.Web
                 cache.Remove(id);
             }
 
-            var repositoryItem = await retryPolicy.ExecuteAsync(() => repository.UpdateItemAsync(item));
+            var repositoryItem = await retryPolicy.ExecuteAsync(() => this.logingExecutor.Execute("UpdateItemAsync", id, () => repository.UpdateItemAsync(item)));
             ClearAllItemsPredicateCachedKeys();
             return repositoryItem;
         }
