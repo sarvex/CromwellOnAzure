@@ -42,6 +42,7 @@ namespace TesApi.Web
         private static readonly HttpClient httpClient = new HttpClient();
 
         private readonly ILogger logger;
+        private readonly LoggingExecutor logingExecutor;
         private readonly Func<Task<BatchAccount>> getBatchAccountFunc;
         private readonly BatchClient batchClient;
         private readonly string subscriptionId;
@@ -58,6 +59,7 @@ namespace TesApi.Web
         public AzureProxy(string batchAccountName, string azureOfferDurableId, ILogger logger)
         {
             this.logger = logger;
+            this.logingExecutor = new LoggingExecutor(logger);
 
             var findBatchAccountResult = FindBatchAccountAsync(batchAccountName).Result;
 
@@ -142,22 +144,24 @@ namespace TesApi.Web
         /// </summary>
         /// <param name="tesTaskId">The unique TES task ID</param>
         /// <returns>The next logical, new Azure Batch job ID</returns>
-        public async Task<string> GetNextBatchJobIdAsync(string tesTaskId)
+        public Task<string> GetNextBatchJobIdAsync(string tesTaskId)
         {
-            var jobFilter = new ODATADetailLevel
+            return this.logingExecutor.Execute(nameof(GetNextBatchJobIdAsync), tesTaskId, async () =>
             {
-                FilterClause = $"startswith(id,'{tesTaskId}{BatchJobAttemptSeparator}')",
-                SelectClause = "id"
-            };
+                var jobFilter = new ODATADetailLevel
+                {
+                    FilterClause = $"startswith(id,'{tesTaskId}{BatchJobAttemptSeparator}')",
+                    SelectClause = "id"
+                };
 
-            var lastAttemptNumber = (await batchClient.JobOperations.ListJobs(jobFilter).ToListAsync())
-                .Select(j => int.Parse(j.Id.Split(BatchJobAttemptSeparator)[1]))
-                .OrderBy(a => a)
-                .LastOrDefault();
+                var lastAttemptNumber = (await batchClient.JobOperations.ListJobs(jobFilter).ToListAsync())
+                    .Select(j => int.Parse(j.Id.Split(BatchJobAttemptSeparator)[1]))
+                    .OrderBy(a => a)
+                    .LastOrDefault();
 
-            return $"{tesTaskId}{BatchJobAttemptSeparator}{lastAttemptNumber + 1}";
+                return $"{tesTaskId}{BatchJobAttemptSeparator}{lastAttemptNumber + 1}";
+            });
         }
-
 
         /// <summary>
         /// Gets the counts of active batch nodes, grouped by VmSize
@@ -165,15 +169,17 @@ namespace TesApi.Web
         /// <returns>Batch node counts</returns>
         public IEnumerable<AzureBatchNodeCount> GetBatchActiveNodeCountByVmSize()
         {
-            return batchClient.PoolOperations.ListPools()
-                .Select(p => new
-                {
-                    p.VirtualMachineSize,
-                    DedicatedNodeCount = Math.Max(p.TargetDedicatedComputeNodes ?? 0, p.CurrentDedicatedComputeNodes ?? 0),
-                    LowPriorityNodeCount = Math.Max(p.TargetLowPriorityComputeNodes ?? 0, p.CurrentLowPriorityComputeNodes ?? 0)
-                })
-                .GroupBy(x => x.VirtualMachineSize)
-                .Select(grp => new AzureBatchNodeCount { VirtualMachineSize = grp.Key, DedicatedNodeCount = grp.Sum(x => x.DedicatedNodeCount), LowPriorityNodeCount = grp.Sum(x => x.LowPriorityNodeCount) });
+            return this.logingExecutor.Execute(nameof(GetBatchActiveNodeCountByVmSize), null, () =>
+                batchClient.PoolOperations.ListPools()
+                    .Select(p => new
+                    {
+                        p.VirtualMachineSize,
+                        DedicatedNodeCount = Math.Max(p.TargetDedicatedComputeNodes ?? 0, p.CurrentDedicatedComputeNodes ?? 0),
+                        LowPriorityNodeCount = Math.Max(p.TargetLowPriorityComputeNodes ?? 0, p.CurrentLowPriorityComputeNodes ?? 0)
+                    })
+                    .GroupBy(x => x.VirtualMachineSize)
+                    .Select(grp => new AzureBatchNodeCount { VirtualMachineSize = grp.Key, DedicatedNodeCount = grp.Sum(x => x.DedicatedNodeCount), LowPriorityNodeCount = grp.Sum(x => x.LowPriorityNodeCount) })
+            );
         }
 
         /// <summary>
@@ -182,13 +188,16 @@ namespace TesApi.Web
         /// <returns>Count of active batch pools</returns>
         public int GetBatchActivePoolCount()
         {
-            var activePoolsFilter = new ODATADetailLevel
+            return this.logingExecutor.Execute(nameof(GetBatchActivePoolCount), null, () =>
             {
-                FilterClause = $"state eq 'active' or state eq 'deleting'",
-                SelectClause = "id"
-            };
+                var activePoolsFilter = new ODATADetailLevel
+                {
+                    FilterClause = $"state eq 'active' or state eq 'deleting'",
+                    SelectClause = "id"
+                };
 
-            return batchClient.PoolOperations.ListPools(activePoolsFilter).Count();
+                return batchClient.PoolOperations.ListPools(activePoolsFilter).Count();
+            });
         }
 
         /// <summary>
@@ -197,38 +206,44 @@ namespace TesApi.Web
         /// <returns>Count of active batch jobs</returns>
         public int GetBatchActiveJobCount()
         {
-            var activeJobsFilter = new ODATADetailLevel
+            return this.logingExecutor.Execute(nameof(GetBatchActiveJobCount), null, () =>
             {
-                FilterClause = $"state eq 'active' or state eq 'disabling' or state eq 'terminating' or state eq 'deleting'",
-                SelectClause = "id"
-            };
+                var activeJobsFilter = new ODATADetailLevel
+                {
+                    FilterClause = $"state eq 'active' or state eq 'disabling' or state eq 'terminating' or state eq 'deleting'",
+                    SelectClause = "id"
+                };
 
-            return batchClient.JobOperations.ListJobs(activeJobsFilter).Count();
+                return batchClient.JobOperations.ListJobs(activeJobsFilter).Count();
+            });
         }
 
         /// <summary>
         /// Gets the batch quotas
         /// </summary>
         /// <returns>Batch quotas</returns>
-        public async Task<AzureBatchAccountQuotas> GetBatchAccountQuotasAsync()
+        public Task<AzureBatchAccountQuotas> GetBatchAccountQuotasAsync()
         {
-            try
+            return this.logingExecutor.Execute(nameof(GetBatchAccountQuotasAsync), null, async () =>
             {
-                var batchAccount = await getBatchAccountFunc();
-
-                return new AzureBatchAccountQuotas
+                try
                 {
-                    ActiveJobAndJobScheduleQuota = batchAccount.ActiveJobAndJobScheduleQuota,
-                    DedicatedCoreQuota = batchAccount.DedicatedCoreQuota.Value,
-                    LowPriorityCoreQuota = batchAccount.LowPriorityCoreQuota.Value,
-                    PoolQuota = batchAccount.PoolQuota
-                };
-            }
-            catch (Exception ex)
-            {
-                logger.LogError(ex, $"An exception occurred when getting the batch account.");
-                throw;
-            }
+                    var batchAccount = await getBatchAccountFunc();
+
+                    return new AzureBatchAccountQuotas
+                    {
+                        ActiveJobAndJobScheduleQuota = batchAccount.ActiveJobAndJobScheduleQuota,
+                        DedicatedCoreQuota = batchAccount.DedicatedCoreQuota.Value,
+                        LowPriorityCoreQuota = batchAccount.LowPriorityCoreQuota.Value,
+                        PoolQuota = batchAccount.PoolQuota
+                    };
+                }
+                catch (Exception ex)
+                {
+                    logger.LogError(ex, $"An exception occurred when getting the batch account.");
+                    throw;
+                }
+            });
         }
 
         /// <summary>
@@ -238,28 +253,31 @@ namespace TesApi.Web
         /// <param name="cloudTask"></param>
         /// <param name="poolInformation"></param>
         /// <returns></returns>
-        public async Task CreateBatchJobAsync(string jobId, CloudTask cloudTask, PoolInformation poolInformation)
+        public Task CreateBatchJobAsync(string jobId, CloudTask cloudTask, PoolInformation poolInformation)
         {
-            var job = batchClient.JobOperations.CreateJob(jobId, poolInformation);
-
-            await job.CommitAsync();
-
-            try
+            return this.logingExecutor.Execute(nameof(CreateBatchJobAsync), jobId, async () =>
             {
-                job = await batchClient.JobOperations.GetJobAsync(job.Id); // Retrieve the "bound" version of the job
-                job.PoolInformation = poolInformation;  // Redoing this since the container registry password is not retrieved by GetJobAsync()
-                job.OnAllTasksComplete = OnAllTasksComplete.TerminateJob;
+                var job = batchClient.JobOperations.CreateJob(jobId, poolInformation);
 
-                await job.AddTaskAsync(cloudTask);
                 await job.CommitAsync();
-            }
-            catch (Exception ex)
-            {
-                var batchError = JsonConvert.SerializeObject((ex as BatchException)?.RequestInformation?.BatchError);
-                logger.LogError(ex, $"Deleting {job.Id} because adding task to it failed. Batch error: {batchError}");
-                await batchClient.JobOperations.DeleteJobAsync(job.Id);
-                throw;
-            }
+
+                try
+                {
+                    job = await batchClient.JobOperations.GetJobAsync(job.Id); // Retrieve the "bound" version of the job
+                    job.PoolInformation = poolInformation;  // Redoing this since the container registry password is not retrieved by GetJobAsync()
+                    job.OnAllTasksComplete = OnAllTasksComplete.TerminateJob;
+
+                    await job.AddTaskAsync(cloudTask);
+                    await job.CommitAsync();
+                }
+                catch (Exception ex)
+                {
+                    var batchError = JsonConvert.SerializeObject((ex as BatchException)?.RequestInformation?.BatchError);
+                    logger.LogError(ex, $"Deleting {job.Id} because adding task to it failed. Batch error: {batchError}");
+                    await batchClient.JobOperations.DeleteJobAsync(job.Id);
+                    throw;
+                }
+            });
         }
 
         /// <summary>
@@ -285,8 +303,10 @@ namespace TesApi.Web
                     SelectClause = "*"
                 };
 
-                var jobInfos = (await batchClient.JobOperations.ListJobs(jobFilter).ToListAsync())
-                    .Select(j => new { Job = j, AttemptNumber = int.Parse(j.Id.Split(BatchJobAttemptSeparator)[1]) });
+                var jobInfos = await this.logingExecutor.Execute("GetBatchJobAndTaskStateAsync_GetTasksBatchJob", tesTaskId, async () =>
+                    (await batchClient.JobOperations.ListJobs(jobFilter).ToListAsync())
+                        .Select(j => new { Job = j, AttemptNumber = int.Parse(j.Id.Split(BatchJobAttemptSeparator)[1]) })
+                );
 
                 if (!jobInfos.Any())
                 {
@@ -311,13 +331,18 @@ namespace TesApi.Web
                         SelectClause = "*"
                     };
 
-                    var pool = (await batchClient.PoolOperations.ListPools(poolFilter).ToListAsync()).FirstOrDefault();
+                    var pool = await this.logingExecutor.Execute("GetBatchJobAndTaskStateAsync_GetTasksBatchPool", tesTaskId, async () =>
+                    
+                        (await batchClient.PoolOperations.ListPools(poolFilter).ToListAsync()).FirstOrDefault()
+                    );
 
                     if (pool != null)
                     {
                         nodeAllocationFailed = pool.ResizeErrors?.Count > 0;
 
-                        var node = (await pool.ListComputeNodes().ToListAsync()).FirstOrDefault();
+                        var node = await this.logingExecutor.Execute("GetBatchJobAndTaskStateAsync_GetTasksBatchNode", tesTaskId, async () =>
+                            (await pool.ListComputeNodes().ToListAsync()).FirstOrDefault()
+                        );
 
                         if (node != null)
                         {
@@ -338,7 +363,10 @@ namespace TesApi.Web
 
                 try
                 {
-                    var batchTask = await batchClient.JobOperations.GetTaskAsync(job.Id, tesTaskId);
+                    var batchTask = await this.logingExecutor.Execute("GetBatchJobAndTaskStateAsync_GetTasksBatchTask", tesTaskId, () =>
+                         batchClient.JobOperations.GetTaskAsync(job.Id, tesTaskId)
+                    );
+
                     taskState = batchTask.State;
                     taskExecutionInformation = batchTask.ExecutionInformation;
                 }
@@ -389,7 +417,8 @@ namespace TesApi.Web
                 SelectClause = "id"
             };
 
-            var batchJobsToDelete = await batchClient.JobOperations.ListJobs(jobFilter).ToListAsync();
+            var batchJobsToDelete = await this.logingExecutor.Execute("DeleteBatchJobAsync_ListJobsToDelete", tesTaskId, () => batchClient.JobOperations.ListJobs(jobFilter).ToListAsync());
+
             var count = batchJobsToDelete.Count();
 
             if (count > 1)
@@ -400,7 +429,8 @@ namespace TesApi.Web
             foreach (var job in batchJobsToDelete)
             {
                 logger.LogInformation($"Deleting job {job.Id}");
-                await batchClient.JobOperations.DeleteJobAsync(job.Id);
+
+                await this.logingExecutor.Execute("DeleteBatchJobAsync_DeleteJob", tesTaskId, () => batchClient.JobOperations.DeleteJobAsync(job.Id));
             }
         }
 
@@ -416,7 +446,9 @@ namespace TesApi.Web
                 SelectClause = "id"
             };
 
-            return (await batchClient.JobOperations.ListJobs(filter).ToListAsync()).Select(c => c.Id);
+            return await this.logingExecutor.Execute("ListOldJobsToDeleteAsync", null, async () =>
+                (await batchClient.JobOperations.ListJobs(filter).ToListAsync()).Select(c => c.Id)
+            );
         }
 
         /// <summary>
@@ -431,7 +463,9 @@ namespace TesApi.Web
                 SelectClause = "id"
             };
 
-            return (await batchClient.PoolOperations.ListPools(activePoolsFilter).ToListAsync(cancellationToken)).Select(p => p.Id);
+            return await this.logingExecutor.Execute("GetActivePoolIdsAsync", prefix, async () =>
+                (await batchClient.PoolOperations.ListPools(activePoolsFilter).ToListAsync(cancellationToken)).Select(p => p.Id)
+            );
         }
 
         /// <summary>
@@ -440,9 +474,11 @@ namespace TesApi.Web
         /// <returns>Pool ids</returns>
         public async Task<IEnumerable<string>> GetPoolIdsReferencedByJobsAsync(CancellationToken cancellationToken = default)
         {
-            return (await batchClient.JobOperations.ListJobs(new ODATADetailLevel(selectClause: "executionInfo")).ToListAsync(cancellationToken))
-                .Where(j => !string.IsNullOrEmpty(j.ExecutionInformation?.PoolId))
-                .Select(j => j.ExecutionInformation.PoolId);
+            return await this.logingExecutor.Execute("GetPoolIdsReferencedByJobsAsync", null, async () =>
+                (await batchClient.JobOperations.ListJobs(new ODATADetailLevel(selectClause: "executionInfo")).ToListAsync(cancellationToken))
+                    .Where(j => !string.IsNullOrEmpty(j.ExecutionInformation?.PoolId))
+                    .Select(j => j.ExecutionInformation.PoolId)
+            );
         }
 
         /// <summary>
@@ -450,7 +486,9 @@ namespace TesApi.Web
         /// </summary>
         public Task DeleteBatchPoolAsync(string poolId, CancellationToken cancellationToken = default)
         {
-            return batchClient.PoolOperations.DeletePoolAsync(poolId, cancellationToken: cancellationToken);
+            return this.logingExecutor.Execute("DeleteBatchPoolAsync", poolId,  () =>
+                batchClient.PoolOperations.DeletePoolAsync(poolId, cancellationToken: cancellationToken)
+            );
         }
 
         /// <summary>
@@ -459,30 +497,33 @@ namespace TesApi.Web
         /// <returns>List of container registries</returns>
         private async Task<IEnumerable<ContainerRegistryInfo>> GetAccessibleContainerRegistriesAsync()
         {
-            var azureClient = await GetAzureManagementClientAsync();
-            var subscriptionIds = (await azureClient.Subscriptions.ListAsync()).Select(s => s.SubscriptionId);
-            var infos = new List<ContainerRegistryInfo>();
-
-            foreach (var subId in subscriptionIds)
+            return await this.logingExecutor.Execute("GetAccessibleContainerRegistriesAsync", null, async () =>
             {
-                try
-                {
-                    var registries = await azureClient.WithSubscription(subId).ContainerRegistries.ListAsync();
+                var azureClient = await GetAzureManagementClientAsync();
+                var subscriptionIds = (await azureClient.Subscriptions.ListAsync()).Select(s => s.SubscriptionId);
+                var infos = new List<ContainerRegistryInfo>();
 
-                    foreach (var r in registries)
+                foreach (var subId in subscriptionIds)
+                {
+                    try
                     {
-                        var server = await r.GetCredentialsAsync();
-                        var info = new ContainerRegistryInfo { RegistryServer = r.LoginServerUrl, Username = server.Username, Password = server.AccessKeys[AccessKeyType.Primary] };
-                        infos.Add(info);
+                        var registries = await azureClient.WithSubscription(subId).ContainerRegistries.ListAsync();
+
+                        foreach (var r in registries)
+                        {
+                            var server = await r.GetCredentialsAsync();
+                            var info = new ContainerRegistryInfo { RegistryServer = r.LoginServerUrl, Username = server.Username, Password = server.AccessKeys[AccessKeyType.Primary] };
+                            infos.Add(info);
+                        }
+                    }
+                    catch (Exception)
+                    {
+                        logger.LogWarning($"TES service has no permission to list container registries in subscription {subId}.");
                     }
                 }
-                catch (Exception)
-                {
-                    logger.LogWarning($"TES service has no permission to list container registries in subscription {subId}.");
-                }
-            }
 
-            return infos;
+                return infos;
+            });
         }
 
         /// <summary>
@@ -491,16 +532,19 @@ namespace TesApi.Web
         /// <returns>List of storage accounts</returns>
         public async Task<IEnumerable<StorageAccountInfo>> GetAccessibleStorageAccountsAsync()
         {
-            var azureClient = await GetAzureManagementClientAsync();
+            return await this.logingExecutor.Execute("GetAccessibleStorageAccountsAsync", null, async () =>
+            {
+                var azureClient = await GetAzureManagementClientAsync();
 
-            var subscriptionIds = (await azureClient.Subscriptions.ListAsync()).Select(s => s.SubscriptionId);
+                var subscriptionIds = (await azureClient.Subscriptions.ListAsync()).Select(s => s.SubscriptionId);
 
-            return (await Task.WhenAll(
-                subscriptionIds.Select(async subId =>
-                    (await azureClient.WithSubscription(subId).StorageAccounts.ListAsync())
-                        .Select(a => new StorageAccountInfo { Id = a.Id, Name = a.Name, SubscriptionId = subId, BlobEndpoint = a.EndPoints.Primary.Blob }))))
-                .SelectMany(a => a)
-                .ToList();
+                return (await Task.WhenAll(
+                    subscriptionIds.Select(async subId =>
+                        (await azureClient.WithSubscription(subId).StorageAccounts.ListAsync())
+                            .Select(a => new StorageAccountInfo { Id = a.Id, Name = a.Name, SubscriptionId = subId, BlobEndpoint = a.EndPoints.Primary.Blob }))))
+                    .SelectMany(a => a)
+                    .ToList();
+            });
         }
 
         /// <summary>
@@ -510,18 +554,21 @@ namespace TesApi.Web
         /// <returns>The primary key</returns>
         public async Task<string> GetStorageAccountKeyAsync(StorageAccountInfo storageAccountInfo)
         {
-            try
+            return await this.logingExecutor.Execute("GetStorageAccountKeyAsync", storageAccountInfo.Name, async () =>
             {
-                var azureClient = await GetAzureManagementClientAsync();
-                var storageAccount = await azureClient.WithSubscription(storageAccountInfo.SubscriptionId).StorageAccounts.GetByIdAsync(storageAccountInfo.Id);
+                try
+                {
+                    var azureClient = await GetAzureManagementClientAsync();
+                    var storageAccount = await azureClient.WithSubscription(storageAccountInfo.SubscriptionId).StorageAccounts.GetByIdAsync(storageAccountInfo.Id);
 
-                return (await storageAccount.GetKeysAsync()).First().Value;
-            }
-            catch (Exception ex)
-            {
-                logger.LogError(ex, $"An exception occurred when getting the storage account key for account {storageAccountInfo.Name}.");
-                throw;
-            }
+                    return (await storageAccount.GetKeysAsync()).First().Value;
+                }
+                catch (Exception ex)
+                {
+                    logger.LogError(ex, $"An exception occurred when getting the storage account key for account {storageAccountInfo.Name}.");
+                    throw;
+                }
+            });
         }
 
         /// <summary>
@@ -532,7 +579,9 @@ namespace TesApi.Web
         /// <returns>A task to await</returns>
         public Task UploadBlobAsync(Uri blobAbsoluteUri, string content)
         {
-            return new CloudBlockBlob(blobAbsoluteUri).UploadTextAsync(content);
+            return this.logingExecutor.Execute("UploadBlobAsync", blobAbsoluteUri.GetLeftPart(UriPartial.Path), () =>
+                new CloudBlockBlob(blobAbsoluteUri).UploadTextAsync(content)
+            );
         }
 
         /// <summary>
@@ -543,7 +592,9 @@ namespace TesApi.Web
         /// <returns>A task to await</returns>
         public Task UploadBlobFromFileAsync(Uri blobAbsoluteUri, string filePath)
         {
-            return new CloudBlockBlob(blobAbsoluteUri).UploadFromFileAsync(filePath);
+            return this.logingExecutor.Execute("UploadBlobFromFileAsync", blobAbsoluteUri.GetLeftPart(UriPartial.Path), () =>
+                new CloudBlockBlob(blobAbsoluteUri).UploadFromFileAsync(filePath)
+            );
         }
 
         /// <summary>
@@ -553,7 +604,9 @@ namespace TesApi.Web
         /// <returns>Blob content</returns>
         public Task<string> DownloadBlobAsync(Uri blobAbsoluteUri)
         {
-            return new CloudBlockBlob(blobAbsoluteUri).DownloadTextAsync();
+            return this.logingExecutor.Execute("DownloadBlobAsync", blobAbsoluteUri.GetLeftPart(UriPartial.Path), () =>
+                new CloudBlockBlob(blobAbsoluteUri).DownloadTextAsync()
+            );
         }
 
         /// <summary>
@@ -563,21 +616,24 @@ namespace TesApi.Web
         /// <returns>List of blob paths</returns>
         public async Task<IEnumerable<string>> ListBlobsAsync(Uri directoryUri)
         {
-            var blob = new CloudBlockBlob(directoryUri);
-            var directory = blob.Container.GetDirectoryReference(blob.Name);
-
-            BlobContinuationToken continuationToken = null;
-            var results = new List<string>();
-
-            do
+            return await this.logingExecutor.Execute("DownloadBlobAsync", directoryUri.GetLeftPart(UriPartial.Path), async() =>
             {
-                var response = await directory.ListBlobsSegmentedAsync(useFlatBlobListing: true, blobListingDetails: BlobListingDetails.None, maxResults: null, currentToken: continuationToken, options: null, operationContext: null);
-                continuationToken = response.ContinuationToken;
-                results.AddRange(response.Results.Cast<CloudBlob>().Select(b => b.Name));
-            }
-            while (continuationToken != null);
+                var blob = new CloudBlockBlob(directoryUri);
+                var directory = blob.Container.GetDirectoryReference(blob.Name);
 
-            return results;
+                BlobContinuationToken continuationToken = null;
+                var results = new List<string>();
+
+                do
+                {
+                    var response = await directory.ListBlobsSegmentedAsync(useFlatBlobListing: true, blobListingDetails: BlobListingDetails.None, maxResults: null, currentToken: continuationToken, options: null, operationContext: null);
+                    continuationToken = response.ContinuationToken;
+                    results.AddRange(response.Results.Cast<CloudBlob>().Select(b => b.Name));
+                }
+                while (continuationToken != null);
+
+                return results;
+            });
         }
 
         /// <summary>
@@ -586,8 +642,11 @@ namespace TesApi.Web
         /// <returns><see cref="VirtualMachineInfo"/> for available VMs in a region.</returns>
         public async Task<List<VirtualMachineInfo>> GetVmSizesAndPricesAsync()
         {
-            var vmSizesAndPrices = await GetVmSizesAndPricesRawAsync();
-            return vmSizesAndPrices.ToList();
+            return await this.logingExecutor.Execute("GetVmSizesAndPricesAsync", null, async () =>
+            {
+                var vmSizesAndPrices = await GetVmSizesAndPricesRawAsync();
+                return vmSizesAndPrices.ToList();
+            });
         }
 		
 		/// <summary>
@@ -886,17 +945,21 @@ namespace TesApi.Web
         }
 
         /// <inheritdoc/>
-        public async Task<ContainerRegistryInfo> GetContainerRegistryInfoAsync(string imageName)
+        public Task<ContainerRegistryInfo> GetContainerRegistryInfoAsync(string imageName)
         {
-            return (await GetAccessibleContainerRegistriesAsync())
-                .FirstOrDefault(reg => reg.RegistryServer.Equals(imageName.Split('/').FirstOrDefault(), StringComparison.OrdinalIgnoreCase));
+            return this.logingExecutor.Execute("GetContainerRegistryInfoAsync", imageName, async () =>
+                (await GetAccessibleContainerRegistriesAsync())
+                    .FirstOrDefault(reg => reg.RegistryServer.Equals(imageName.Split('/').FirstOrDefault(), StringComparison.OrdinalIgnoreCase))
+            );
         }
 
         /// <inheritdoc/>
-        public async Task<StorageAccountInfo> GetStorageAccountInfoAsync(string storageAccountName)
+        public Task<StorageAccountInfo> GetStorageAccountInfoAsync(string storageAccountName)
         {
-            return (await GetAccessibleStorageAccountsAsync())
-                .FirstOrDefault(storageAccount => storageAccount.Name.Equals(storageAccountName, StringComparison.OrdinalIgnoreCase));
+            return this.logingExecutor.Execute("GetStorageAccountInfoAsync", storageAccountName, async () =>
+                (await GetAccessibleStorageAccountsAsync())
+                    .FirstOrDefault(storageAccount => storageAccount.Name.Equals(storageAccountName, StringComparison.OrdinalIgnoreCase))
+            );
         }
 
         private class VmPrice

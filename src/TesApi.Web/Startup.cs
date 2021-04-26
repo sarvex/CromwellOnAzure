@@ -78,7 +78,7 @@ namespace TesApi.Web
             (var cosmosDbEndpoint, var cosmosDbKey) = azureProxy.GetCosmosDbEndpointAndKeyAsync(Configuration["CosmosDbAccountName"]).Result;
 
             var cosmosDbRepository = new CosmosDbRepository<TesTask>(cosmosDbEndpoint, cosmosDbKey, CosmosDbDatabaseId, CosmosDbContainerId, CosmosDbPartitionId);
-            var repository = new CachingWithRetriesRepository<TesTask>(cosmosDbRepository);
+            var repository = new CachingWithRetriesRepository<TesTask>(cosmosDbRepository, loggerFactory.CreateLogger("CosmosDb"));
 
             services.AddSingleton<IRepository<TesTask>>(repository);
             services.AddSingleton<IBatchScheduler>(new BatchScheduler(loggerFactory.CreateLogger<BatchScheduler>(), Configuration, cachingAzureProxy));
