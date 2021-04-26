@@ -157,7 +157,7 @@ namespace TesApi.Web
                 }
             }
 
-            logger.LogTrace($"TIMING,{startTime:s},OrchestrateTesTasksOnBatch,,{DateTime.UtcNow.Subtract(startTime).TotalSeconds}");
+            logger.LogTrace($"TIMING,{startTime:s},OrchestrateTesTasksOnBatch,TaskCount:{tesTasks.Count},{DateTime.UtcNow.Subtract(startTime).TotalSeconds}");
         }
     }
 }
