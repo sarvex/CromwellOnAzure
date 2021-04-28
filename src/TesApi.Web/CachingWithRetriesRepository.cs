@@ -70,7 +70,7 @@ namespace TesApi.Web
                 return true;
             }
 
-            var repositoryItemFound = await retryPolicy.ExecuteAsync(() => this.logingExecutor.Execute("GetItemsAsyncWithPagination", id, () => repository.TryGetItemAsync(id, item => repositoryItem = item)));
+            var repositoryItemFound = await retryPolicy.ExecuteAsync(() => this.logingExecutor.Execute("TryGetItemAsync", id, () => repository.TryGetItemAsync(id, item => repositoryItem = item)));
 
             if (repositoryItemFound)
             {
