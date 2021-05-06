@@ -23,6 +23,9 @@ function write_log() {
 write_log "CromwellOnAzure startup log"
 write_log
 
+write_log "Running az login --identity"
+az login --identity
+
 write_log "Generating Docker Compose .env file"
 declare -A kv
 while IFS='=' read key value; do kv[$key]=$value; done < <(awk 'NF > 0' env-*)
@@ -60,7 +63,7 @@ do
         IFS='~' read content http_status <<< $(curl -s -X GET --write-out '~%{http_code}' "https://management.azure.com/subscriptions?api-version=2019-05-10" -H "Authorization: Bearer $mgmt_token" -d '')
 
         if [ "$http_status" == "200" ]; then
-            subscription_ids=( $(grep -Po '"id":"/subscriptions/\K([^"]*)' <<< $content) )
+            subscription_ids=( $(az login --query [].id -o tsv) )
 
             write_log "Getting list of accessible resources..."
             # Initializing array with single empty string to avoid unbound variable error in bash version < 4.4

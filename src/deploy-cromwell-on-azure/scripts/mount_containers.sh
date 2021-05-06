@@ -22,10 +22,11 @@ function echo_with_ts() {
 
 get_list_of_containers_to_mount () {
   local -n result=$1
-  echo_with_ts "Getting access token for $default_storage_account"
-  storage_token=$(curl -s -H Metadata:true "http://169.254.169.254/metadata/identity/oauth2/token?api-version=2018-02-01&resource=https://$default_storage_account.blob.core.windows.net" | grep -Po '"access_token":"\K([^"]*)')
-  echo_with_ts "Getting list of containers to mount from containers-to-mount file"
-  containers=$(curl -s -X GET "https://$default_storage_account.blob.core.windows.net/configuration/containers-to-mount" -H "Authorization: Bearer $storage_token" -H "x-ms-version: 2018-03-28" -d '' )
+  echo_with_ts "Getting access key of the $default_storage_account storage account"
+  key=$(az storage account keys list --account-name $default_storage_account --query [0].value -o tsv)
+   echo_with_ts "Getting list of containers to mount from containers-to-mount file"
+  az storage blob download --account-name $default_storage_account --auth-mode key --account-key $key --container-name configuration --name containers-to-mount --file /tmp/containers-to-mount > /dev/null 2>&1
+  containers=$(</tmp/containers-to-mount)
   containers=$(tr -d "[:blank:]" <<< "$containers")    # remove all spaces
   containers=$(grep "^[^#]" <<< "$containers")    # remove all comment lines
   result=($containers)
