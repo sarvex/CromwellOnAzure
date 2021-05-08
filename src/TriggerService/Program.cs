@@ -58,15 +58,15 @@ namespace TriggerService
             (var cosmosDbEndpoint, var cosmosDbKey) = await GetCosmosDbEndpointAndKeyAsync(cosmosDbAccountName);
 
             var environment = new CromwellOnAzureEnvironment(
-                            serviceProvider.GetRequiredService<ILoggerFactory>(),
-                            new AzureStorage(serviceProvider.GetRequiredService<ILoggerFactory>().CreateLogger<AzureStorage>(), cloudStorageAccount, new System.Net.Http.HttpClient()),
-                            new CromwellApiClient.CromwellApiClient(cromwellUrl),
-                            new CosmosDbRepository<TesTask>(
-                                cosmosDbEndpoint, 
-                                cosmosDbKey, 
-                                Constants.CosmosDbDatabaseId, 
-                                Constants.CosmosDbContainerId, 
-                                Constants.CosmosDbPartitionId));
+                serviceProvider.GetRequiredService<ILoggerFactory>(),
+                new AzureStorage(cloudStorageAccount, new System.Net.Http.HttpClient()),
+                new CromwellApiClient.CromwellApiClient(cromwellUrl),
+                new CosmosDbRepository<TesTask>(
+                    cosmosDbEndpoint, 
+                    cosmosDbKey, 
+                    Constants.CosmosDbDatabaseId, 
+                    Constants.CosmosDbContainerId, 
+                    Constants.CosmosDbPartitionId));
 
             serviceCollection.AddSingleton(s => new TriggerEngine(s.GetRequiredService<ILoggerFactory>(), environment));
             serviceProvider = serviceCollection.BuildServiceProvider();

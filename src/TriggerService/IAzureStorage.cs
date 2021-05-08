@@ -12,21 +12,33 @@ namespace TriggerService
     {
         string AccountName { get; }
         string AccountAuthority { get; }
-        string GetBlobSasUrl(string blobUrl, TimeSpan sasTokenDuration);
         Task<byte[]> DownloadBlockBlobAsync(string blobUrl);
-        Task<string> UploadFileFromPathAsync(string path, string container, string blobName);
         Task<string> UploadFileTextAsync(string content, string container, string blobName);
-        //Task<string> MutateStateAsync(string container, string blobName, AzureStorage.WorkflowState newState, Action<Workflow> action = null);
-        //Task SetStateToInProgressAsync(string container, string blobName, string id);
-        Task DeleteAllBlobsAsync(string container);
-        Task DeleteContainerAsync(string container);
-        Task<IEnumerable<CloudBlockBlob>> GetWorkflowBlobsToAbortAsync();
-        Task<IEnumerable<CloudBlockBlob>> GetBlobsByStateAsync(AzureStorage.WorkflowState state);
-        Task<IEnumerable<CloudBlockBlob>> GetRecentlyUpdatedInProgressWorkflowBlobsAsync();
-        Task<bool> IsSingleBlobExistsFromPrefixAsync(string container, string blobPrefix);
+
+        /// <summary>
+        /// Downloads the blob's contents as a string.
+        /// </summary>
+        /// <param name="container">Blob Container name</param>
+        /// <param name="blobName">Blob name</param>
+        /// <returns>A <see cref="Task"/> object of type string that represents the asynchronous operation.</returns>
+        Task<string> DownloadBlobTextAsync(string container, string blobName);
+
+        /// <summary>
+        /// Deletes the blob if it already exists.
+        /// </summary>
+        /// <param name="container">Blob Container name</param>
+        /// <param name="blobName">Blob name</param>
+        /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
+        Task DeleteBlobIfExistsAsync(string container, string blobName);
+
+        /// <summary>
+        /// Returns all workflow trigger files for the given state, except readme files
+        /// </summary>
+        /// <param name="state">Workflow state to query for</param>
+        /// <returns>List of <see cref="TriggerFile" /></returns>
+        Task<IEnumerable<TriggerFile>> GetWorkflowsByStateAsync(WorkflowState state);
+
         Task<bool> IsAvailableAsync();
         Task<byte[]> DownloadFileUsingHttpClientAsync(string url);
-        Task<string> DownloadBlobTextAsync(string container, string blobName);
-        Task DeleteBlobIfExistsAsync(string container, string blobName);
     }
 }
