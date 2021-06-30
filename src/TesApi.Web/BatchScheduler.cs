@@ -41,6 +41,7 @@ namespace TesApi.Web
         private readonly IEnumerable<string> allowedVmSizes;
         private readonly List<TesTaskStateTransition> tesTaskStateTransitions;
         private readonly bool usePreemptibleVmsOnly;
+        private readonly string batchNodesSubnetId;
 
         /// <summary>
         /// Orchestrates <see cref="TesTask"/>s on Azure Batch
@@ -57,6 +58,7 @@ namespace TesApi.Web
 
             this.allowedVmSizes = configuration.GetValue<string>("AllowedVmSizes", null)?.Split(',', StringSplitOptions.RemoveEmptyEntries).ToList();
             this.usePreemptibleVmsOnly = configuration.GetValue("UsePreemptibleVmsOnly", false);
+            this.batchNodesSubnetId = configuration.GetValue("BatchNodesSubnetId", string.Empty);
 
             logger.LogInformation($"usePreemptibleVmsOnly: {usePreemptibleVmsOnly}");
 
@@ -676,6 +678,15 @@ namespace TesApi.Web
                 TargetLowPriorityComputeNodes = preemptible ? 1 : 0,
                 TargetDedicatedComputeNodes = preemptible ? 0 : 1
             };
+
+            if (!string.IsNullOrEmpty(this.batchNodesSubnetId))
+            {
+                poolSpecification.NetworkConfiguration = new NetworkConfiguration
+                {
+                    PublicIPAddressConfiguration = new PublicIPAddressConfiguration(IPAddressProvisioningType.NoPublicIPAddresses),
+                    SubnetId = this.batchNodesSubnetId
+                };
+            }
 
             var poolInformation = new PoolInformation
             {
