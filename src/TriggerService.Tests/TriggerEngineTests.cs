@@ -73,7 +73,7 @@ namespace TriggerService.Tests
                 Console.WriteLine(line);
             }
 
-            Assert.IsTrue(availableLines.Count == 4);
+            Assert.AreEqual(4, availableLines.Count);
         }
 
         /// <summary>
