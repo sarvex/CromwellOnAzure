@@ -689,7 +689,7 @@ namespace TesApi.Web
 
                 var containerRegistryInfoForDockerInDocker = await azureProxy.GetContainerRegistryInfoAsync(dockerInDockerImageName);
 
-                if(containerRegistryInfoForDockerInDocker != null && containerRegistryInfoForDockerInDocker != containerRegistryInfo)
+                if(containerRegistryInfoForDockerInDocker != null && containerRegistryInfoForDockerInDocker.RegistryServer != containerRegistryInfo.RegistryServer)
                 {
                     var containerRegistryForDockerInDocker = new ContainerRegistry(
                         userName: containerRegistryInfoForDockerInDocker.Username,
@@ -701,7 +701,7 @@ namespace TesApi.Web
 
                 var containerRegistryInfoForBlobXfer = await azureProxy.GetContainerRegistryInfoAsync(blobxferImageName);
 
-                if (containerRegistryInfoForBlobXfer != null && containerRegistryInfoForBlobXfer != containerRegistryInfo)
+                if (containerRegistryInfoForBlobXfer != null && containerRegistryInfoForBlobXfer.RegistryServer != containerRegistryInfo.RegistryServer)
                 {
                     var containerRegistryForBlobXfer = new ContainerRegistry(
                         userName: containerRegistryInfoForBlobXfer.Username,
