@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.
+﻿// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
 /*
@@ -62,6 +62,13 @@ namespace Tes.Models
         public List<string> Zones { get; set; }
 
         /// <summary>
+        /// Key/value pairs for additional resource properties (e.g. a specific VM SKU)
+        /// </summary>
+        /// <value>Key/value pairs for additional resource properties</value>
+        [DataMember(Name = "additional_properties")]
+        public Dictionary<string, string> AdditionalProperties { get; set; }
+
+        /// <summary>
         /// Returns the string presentation of the object
         /// </summary>
         /// <returns>String presentation of the object</returns>
@@ -73,7 +80,8 @@ namespace Tes.Models
             sb.Append("  Preemptible: ").Append(Preemptible).Append("\n");
             sb.Append("  RamGb: ").Append(RamGb).Append("\n");
             sb.Append("  DiskGb: ").Append(DiskGb).Append("\n");
-            sb.Append("  Zones: ").Append(Zones).Append("\n");
+            sb.Append("  Zones: ").Append(string.Join(", ", Zones)).Append("\n");
+            sb.Append("  AdditionalProperties: ").Append(string.Join(", ", AdditionalProperties.Select(kv => $"{kv.Key}: {kv.Value}"))).Append("\n");
             sb.Append("}\n");
             return sb.ToString();
         }
