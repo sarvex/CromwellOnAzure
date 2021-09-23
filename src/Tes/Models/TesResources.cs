@@ -62,11 +62,18 @@ namespace Tes.Models
         public List<string> Zones { get; set; }
 
         /// <summary>
-        /// Key/value pairs for additional resource properties (e.g. a specific VM SKU)
+        /// Key/value pairs for additional backend parameters (e.g. a specific VM SKU)
         /// </summary>
-        /// <value>Key/value pairs for additional resource properties</value>
-        [DataMember(Name = "additional_properties")]
-        public Dictionary<string, string> AdditionalProperties { get; set; }
+        /// <value>Key/value pairs for additional backend parameters</value>
+        [DataMember(Name = "backend_parameters")]
+        public Dictionary<string, string> BackendParameters { get; set; }
+
+        /// <summary>
+        /// Enforces backend parameters to only those that are accepted by the service
+        /// </summary>
+        /// <value>Set to True to enforce backend parameters to only those that are accepted by the service</value>
+        [DataMember(Name = "backend_parameters_strict")]
+        public bool? BackendParametersStrict { get; set; }
 
         /// <summary>
         /// Returns the string presentation of the object
@@ -81,7 +88,7 @@ namespace Tes.Models
             sb.Append("  RamGb: ").Append(RamGb).Append("\n");
             sb.Append("  DiskGb: ").Append(DiskGb).Append("\n");
             sb.Append("  Zones: ").Append(string.Join(", ", Zones)).Append("\n");
-            sb.Append("  AdditionalProperties: ").Append(string.Join(", ", AdditionalProperties.Select(kv => $"{kv.Key}: {kv.Value}"))).Append("\n");
+            sb.Append("  BackendParameters: ").Append(string.Join(", ", BackendParameters.Select(kv => $"{kv.Key}: {kv.Value}"))).Append("\n");
             sb.Append("}\n");
             return sb.ToString();
         }
