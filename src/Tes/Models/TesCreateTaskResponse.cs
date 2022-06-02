@@ -14,6 +14,7 @@
 using System;
 using System.Runtime.Serialization;
 using System.Text;
+using System.Text.Json.Serialization;
 using Newtonsoft.Json;
 
 namespace Tes.Models
@@ -28,7 +29,7 @@ namespace Tes.Models
         /// Task identifier assigned by the server.
         /// </summary>
         /// <value>Task identifier assigned by the server.</value>
-        [DataMember(Name = "id")]
+        [JsonPropertyName("id")]
         public string Id { get; set; }
 
         /// <summary>

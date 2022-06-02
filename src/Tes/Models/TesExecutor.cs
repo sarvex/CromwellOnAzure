@@ -16,6 +16,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.Serialization;
 using System.Text;
+using System.Text.Json.Serialization;
 using Newtonsoft.Json;
 
 namespace Tes.Models
@@ -30,49 +31,49 @@ namespace Tes.Models
         /// Name of the container image, for example: ubuntu quay.io/aptible/ubuntu gcr.io/my-org/my-image etc...
         /// </summary>
         /// <value>Name of the container image, for example: ubuntu quay.io/aptible/ubuntu gcr.io/my-org/my-image etc...</value>
-        [DataMember(Name = "image")]
+        [JsonPropertyName("image")]
         public string Image { get; set; }
 
         /// <summary>
         /// A sequence of program arguments to execute, where the first argument is the program to execute (i.e. argv).
         /// </summary>
         /// <value>A sequence of program arguments to execute, where the first argument is the program to execute (i.e. argv).</value>
-        [DataMember(Name = "command")]
+        [JsonPropertyName("command")]
         public List<string> Command { get; set; }
 
         /// <summary>
         /// The working directory that the command will be executed in. Defaults to the directory set by the container image.
         /// </summary>
         /// <value>The working directory that the command will be executed in. Defaults to the directory set by the container image.</value>
-        [DataMember(Name = "workdir")]
+        [JsonPropertyName("workdir")]
         public string Workdir { get; set; }
 
         /// <summary>
         /// Path inside the container to a file which will be piped to the executor&#39;s stdin. Must be an absolute path.
         /// </summary>
         /// <value>Path inside the container to a file which will be piped to the executor&#39;s stdin. Must be an absolute path.</value>
-        [DataMember(Name = "stdin")]
+        [JsonPropertyName("stdin")]
         public string Stdin { get; set; }
 
         /// <summary>
         /// Path inside the container to a file where the executor&#39;s stdout will be written to. Must be an absolute path.
         /// </summary>
         /// <value>Path inside the container to a file where the executor&#39;s stdout will be written to. Must be an absolute path.</value>
-        [DataMember(Name = "stdout")]
+        [JsonPropertyName("stdout")]
         public string Stdout { get; set; }
 
         /// <summary>
         /// Path inside the container to a file where the executor&#39;s stderr will be written to. Must be an absolute path.
         /// </summary>
         /// <value>Path inside the container to a file where the executor&#39;s stderr will be written to. Must be an absolute path.</value>
-        [DataMember(Name = "stderr")]
+        [JsonPropertyName("stderr")]
         public string Stderr { get; set; }
 
         /// <summary>
         /// Enviromental variables to set within the container.
         /// </summary>
         /// <value>Enviromental variables to set within the container.</value>
-        [DataMember(Name = "env")]
+        [JsonPropertyName("env")]
         public Dictionary<string, string> Env { get; set; }
 
         /// <summary>

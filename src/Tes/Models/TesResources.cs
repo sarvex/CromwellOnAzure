@@ -16,6 +16,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.Serialization;
 using System.Text;
+using System.Text.Json.Serialization;
 using Newtonsoft.Json;
 
 namespace Tes.Models
@@ -32,49 +33,49 @@ namespace Tes.Models
         /// Requested number of CPUs
         /// </summary>
         /// <value>Requested number of CPUs</value>
-        [DataMember(Name = "cpu_cores")]
+        [JsonPropertyName("cpu_cores")]
         public long? CpuCores { get; set; }
 
         /// <summary>
         /// Is the task allowed to run on preemptible compute instances (e.g. AWS Spot)?
         /// </summary>
         /// <value>Is the task allowed to run on preemptible compute instances (e.g. AWS Spot)?</value>
-        [DataMember(Name = "preemptible")]
+        [JsonPropertyName("preemptible")]
         public bool? Preemptible { get; set; }
 
         /// <summary>
         /// Requested RAM required in gigabytes (GB)
         /// </summary>
         /// <value>Requested RAM required in gigabytes (GB)</value>
-        [DataMember(Name = "ram_gb")]
+        [JsonPropertyName("ram_gb")]
         public double? RamGb { get; set; }
 
         /// <summary>
         /// Requested disk size in gigabytes (GB)
         /// </summary>
         /// <value>Requested disk size in gigabytes (GB)</value>
-        [DataMember(Name = "disk_gb")]
+        [JsonPropertyName("disk_gb")]
         public double? DiskGb { get; set; }
 
         /// <summary>
         /// Request that the task be run in these compute zones.
         /// </summary>
         /// <value>Request that the task be run in these compute zones.</value>
-        [DataMember(Name = "zones")]
+        [JsonPropertyName("zones")]
         public List<string> Zones { get; set; }
 
         /// <summary>
         /// Key/value pairs for backend configuration
         /// </summary>
         /// <value> Key/value pairs for backend configuration</value>
-        [DataMember(Name = "backend_parameters")]
+        [JsonPropertyName("backend_parameters")]
         public Dictionary<string, string> BackendParameters { get; set; }
 
         /// <summary>
         /// If set to true, TES shall fail the task if any backend_parameters key/values are unsupported, otherwise, TES will attempt to run the task
         /// </summary>
         /// <value> If set to true, TES shall fail the task if any backend_parameters key/values are unsupported, otherwise, TES will attempt to run the task</value>
-        [DataMember(Name = "backend_parameters_strict")]
+        [JsonPropertyName("backend_parameters_strict")]
         public bool? BackendParametersStrict { get; set; }
 
         /// <summary>

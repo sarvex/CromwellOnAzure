@@ -16,6 +16,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.Serialization;
 using System.Text;
+using System.Text.Json.Serialization;
 using Newtonsoft.Json;
 
 namespace Tes.Models
@@ -30,27 +31,27 @@ namespace Tes.Models
         /// Returns the name of the service, e.g. \&quot;ohsu-compbio-funnel\&quot;.
         /// </summary>
         /// <value>Returns the name of the service, e.g. \&quot;ohsu-compbio-funnel\&quot;.</value>
-        [DataMember(Name = "name")]
+        [JsonPropertyName("name")]
         public string Name { get; set; }
 
         /// <summary>
         /// Returns a documentation string, e.g. \&quot;Hey, we&#39;re OHSU Comp. Bio!\&quot;.
         /// </summary>
         /// <value>Returns a documentation string, e.g. \&quot;Hey, we&#39;re OHSU Comp. Bio!\&quot;.</value>
-        [DataMember(Name = "doc")]
+        [JsonPropertyName("doc")]
         public string Doc { get; set; }
 
         /// <summary>
         /// Lists some, but not necessarily all, storage locations supported by the service.  Must be in a valid URL format. e.g.  file:///path/to/local/funnel-storage s3://ohsu-compbio-funnel/storage etc.
         /// </summary>
         /// <value>Lists some, but not necessarily all, storage locations supported by the service.  Must be in a valid URL format. e.g.  file:///path/to/local/funnel-storage s3://ohsu-compbio-funnel/storage etc.</value>
-        [DataMember(Name = "storage")]
+        [JsonPropertyName("storage")]
         public List<string> Storage { get; set; }
 
         /// <summary>
         /// List keys supported in TesResources.backend_parameters
         /// </summary>
-        [DataMember(Name = "tesResources_backend_parameters")]
+        [JsonPropertyName("tesResources_backend_parameters")]
         public List<string> TesResourcesSupportedBackendParameters { get; set; }
 
         /// <summary>

@@ -16,6 +16,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.Serialization;
 using System.Text;
+using System.Text.Json.Serialization;
 using Newtonsoft.Json;
 
 namespace Tes.Models
@@ -30,42 +31,42 @@ namespace Tes.Models
         /// Logs for each executor
         /// </summary>
         /// <value>Logs for each executor</value>
-        [DataMember(Name = "logs")]
+        [JsonPropertyName("logs")]
         public List<TesExecutorLog> Logs { get; set; }
 
         /// <summary>
         /// Arbitrary logging metadata included by the implementation.
         /// </summary>
         /// <value>Arbitrary logging metadata included by the implementation.</value>
-        [DataMember(Name = "metadata")]
+        [JsonPropertyName("metadata")]
         public Dictionary<string, string> Metadata { get; set; }
 
         /// <summary>
         /// When the task started, in RFC 3339 format.
         /// </summary>
         /// <value>When the task started, in RFC 3339 format.</value>
-        [DataMember(Name = "start_time")]
+        [JsonPropertyName("start_time")]
         public DateTimeOffset? StartTime { get; set; }
 
         /// <summary>
         /// When the task ended, in RFC 3339 format.
         /// </summary>
         /// <value>When the task ended, in RFC 3339 format.</value>
-        [DataMember(Name = "end_time")]
+        [JsonPropertyName("end_time")]
         public DateTimeOffset? EndTime { get; set; }
 
         /// <summary>
         /// Information about all output files. Directory outputs are flattened into separate items.
         /// </summary>
         /// <value>Information about all output files. Directory outputs are flattened into separate items.</value>
-        [DataMember(Name = "outputs")]
+        [JsonPropertyName("outputs")]
         public List<TesOutputFileLog> Outputs { get; set; }
 
         /// <summary>
         /// System logs are any logs the system decides are relevant, which are not tied directly to an Executor process. Content is implementation specific: format, size, etc.  System logs may be collected here to provide convenient access.  For example, the system may include the name of the host where the task is executing, an error message that caused a SYSTEM_ERROR state (e.g. disk is full), etc.  System logs are only included in the FULL task view.
         /// </summary>
         /// <value>System logs are any logs the system decides are relevant, which are not tied directly to an Executor process. Content is implementation specific: format, size, etc.  System logs may be collected here to provide convenient access.  For example, the system may include the name of the host where the task is executing, an error message that caused a SYSTEM_ERROR state (e.g. disk is full), etc.  System logs are only included in the FULL task view.</value>
-        [DataMember(Name = "system_logs")]
+        [JsonPropertyName("system_logs")]
         public List<string> SystemLogs { get; set; }
 
         /// <summary>

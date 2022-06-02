@@ -14,6 +14,7 @@
 using System;
 using System.Runtime.Serialization;
 using System.Text;
+using System.Text.Json.Serialization;
 using Newtonsoft.Json;
 
 namespace Tes.Models
@@ -28,35 +29,35 @@ namespace Tes.Models
         /// Time the executor started, in RFC 3339 format.
         /// </summary>
         /// <value>Time the executor started, in RFC 3339 format.</value>
-        [DataMember(Name = "start_time")]
+        [JsonPropertyName("start_time")]
         public DateTimeOffset? StartTime { get; set; }
 
         /// <summary>
         /// Time the executor ended, in RFC 3339 format.
         /// </summary>
         /// <value>Time the executor ended, in RFC 3339 format.</value>
-        [DataMember(Name = "end_time")]
+        [JsonPropertyName("end_time")]
         public DateTimeOffset? EndTime { get; set; }
 
         /// <summary>
         /// Stdout content.  This is meant for convenience. No guarantees are made about the content. Implementations may chose different approaches: only the head, only the tail, a URL reference only, etc.  In order to capture the full stdout users should set Executor.stdout to a container file path, and use Task.outputs to upload that file to permanent storage.
         /// </summary>
         /// <value>Stdout content.  This is meant for convenience. No guarantees are made about the content. Implementations may chose different approaches: only the head, only the tail, a URL reference only, etc.  In order to capture the full stdout users should set Executor.stdout to a container file path, and use Task.outputs to upload that file to permanent storage.</value>
-        [DataMember(Name = "stdout")]
+        [JsonPropertyName("stdout")]
         public string Stdout { get; set; }
 
         /// <summary>
         /// Stderr content.  This is meant for convenience. No guarantees are made about the content. Implementations may chose different approaches: only the head, only the tail, a URL reference only, etc.  In order to capture the full stderr users should set Executor.stderr to a container file path, and use Task.outputs to upload that file to permanent storage.
         /// </summary>
         /// <value>Stderr content.  This is meant for convenience. No guarantees are made about the content. Implementations may chose different approaches: only the head, only the tail, a URL reference only, etc.  In order to capture the full stderr users should set Executor.stderr to a container file path, and use Task.outputs to upload that file to permanent storage.</value>
-        [DataMember(Name = "stderr")]
+        [JsonPropertyName("stderr")]
         public string Stderr { get; set; }
 
         /// <summary>
         /// Exit code.
         /// </summary>
         /// <value>Exit code.</value>
-        [DataMember(Name = "exit_code")]
+        [JsonPropertyName("exit_code")]
         public int? ExitCode { get; set; }
 
         /// <summary>

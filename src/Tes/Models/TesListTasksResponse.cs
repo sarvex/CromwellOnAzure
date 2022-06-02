@@ -16,6 +16,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.Serialization;
 using System.Text;
+using System.Text.Json.Serialization;
 using Newtonsoft.Json;
 
 namespace Tes.Models
@@ -30,14 +31,14 @@ namespace Tes.Models
         /// List of tasks.
         /// </summary>
         /// <value>List of tasks.</value>
-        [DataMember(Name = "tasks")]
+        [JsonPropertyName("tasks")]
         public List<TesTask> Tasks { get; set; }
 
         /// <summary>
         /// Token used to return the next page of results. See TaskListRequest.next_page_token
         /// </summary>
         /// <value>Token used to return the next page of results. See TaskListRequest.next_page_token</value>
-        [DataMember(Name = "next_page_token")]
+        [JsonPropertyName("next_page_token")]
         public string NextPageToken { get; set; }
 
         /// <summary>

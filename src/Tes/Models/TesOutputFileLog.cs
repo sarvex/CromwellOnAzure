@@ -14,6 +14,7 @@
 using System;
 using System.Runtime.Serialization;
 using System.Text;
+using System.Text.Json.Serialization;
 using Newtonsoft.Json;
 
 namespace Tes.Models
@@ -28,21 +29,21 @@ namespace Tes.Models
         /// URL of the file in storage, e.g. s3://bucket/file.txt
         /// </summary>
         /// <value>URL of the file in storage, e.g. s3://bucket/file.txt</value>
-        [DataMember(Name = "url")]
+        [JsonPropertyName("url")]
         public string Url { get; set; }
 
         /// <summary>
         /// Path of the file inside the container. Must be an absolute path.
         /// </summary>
         /// <value>Path of the file inside the container. Must be an absolute path.</value>
-        [DataMember(Name = "path")]
+        [JsonPropertyName("path")]
         public string Path { get; set; }
 
         /// <summary>
         /// Size of the file in bytes.
         /// </summary>
         /// <value>Size of the file in bytes.</value>
-        [DataMember(Name = "size_bytes")]
+        [JsonPropertyName("size_bytes")]
         public string SizeBytes { get; set; }
 
         /// <summary>

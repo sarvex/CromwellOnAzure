@@ -16,6 +16,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.Serialization;
 using System.Text;
+using System.Text.Json.Serialization;
 using Newtonsoft.Json;
 
 namespace Tes.Models
@@ -30,80 +31,81 @@ namespace Tes.Models
         /// Task identifier assigned by the server.
         /// </summary>
         /// <value>Task identifier assigned by the server.</value>
-        [DataMember(Name = "id")]
+        [JsonPropertyName("id")]
         public string Id { get; set; }
 
         /// <summary>
         /// Gets or Sets State
         /// </summary>
+        [JsonPropertyName("state")]
         [DataMember(Name = "state")]
         public TesState State { get; set; }
 
         /// <summary>
         /// Gets or Sets Name
         /// </summary>
-        [DataMember(Name = "name")]
+        [JsonPropertyName("name")]
         public string Name { get; set; }
 
         /// <summary>
         /// Gets or Sets Description
         /// </summary>
-        [DataMember(Name = "description")]
+        [JsonPropertyName("description")]
         public string Description { get; set; }
 
         /// <summary>
         /// Input files. Inputs will be downloaded and mounted into the executor container.
         /// </summary>
         /// <value>Input files. Inputs will be downloaded and mounted into the executor container.</value>
-        [DataMember(Name = "inputs")]
+        [JsonPropertyName("inputs")]
         public List<TesInput> Inputs { get; set; }
 
         /// <summary>
         /// Output files. Outputs will be uploaded from the executor container to long-term storage.
         /// </summary>
         /// <value>Output files. Outputs will be uploaded from the executor container to long-term storage.</value>
-        [DataMember(Name = "outputs")]
+        [JsonPropertyName("outputs")]
         public List<TesOutput> Outputs { get; set; }
 
         /// <summary>
         /// Gets or Sets Resources
         /// </summary>
-        [DataMember(Name = "resources")]
+        [JsonPropertyName("resources")]
         public TesResources Resources { get; set; }
 
         /// <summary>
         /// A list of executors to be run, sequentially. Execution stops on the first error.
         /// </summary>
         /// <value>A list of executors to be run, sequentially. Execution stops on the first error.</value>
-        [DataMember(Name = "executors")]
+        [JsonPropertyName("executors")]
         public List<TesExecutor> Executors { get; set; }
 
         /// <summary>
         /// Volumes are directories which may be used to share data between Executors. Volumes are initialized as empty directories by the system when the task starts and are mounted at the same path in each Executor.  For example, given a volume defined at \&quot;/vol/A\&quot;, executor 1 may write a file to \&quot;/vol/A/exec1.out.txt\&quot;, then executor 2 may read from that file.  (Essentially, this translates to a &#x60;docker run -v&#x60; flag where the container path is the same for each executor).
         /// </summary>
         /// <value>Volumes are directories which may be used to share data between Executors. Volumes are initialized as empty directories by the system when the task starts and are mounted at the same path in each Executor.  For example, given a volume defined at \&quot;/vol/A\&quot;, executor 1 may write a file to \&quot;/vol/A/exec1.out.txt\&quot;, then executor 2 may read from that file.  (Essentially, this translates to a &#x60;docker run -v&#x60; flag where the container path is the same for each executor).</value>
-        [DataMember(Name = "volumes")]
+        [JsonPropertyName("volumes")]
         public List<string> Volumes { get; set; }
 
         /// <summary>
         /// A key-value map of arbitrary tags.
         /// </summary>
         /// <value>A key-value map of arbitrary tags.</value>
-        [DataMember(Name = "tags")]
+        [JsonPropertyName("tags")]
         public Dictionary<string, string> Tags { get; set; }
 
         /// <summary>
         /// Task logging information. Normally, this will contain only one entry, but in the case where a task fails and is retried, an entry will be appended to this list.
         /// </summary>
         /// <value>Task logging information. Normally, this will contain only one entry, but in the case where a task fails and is retried, an entry will be appended to this list.</value>
-        [DataMember(Name = "logs")]
+        [JsonPropertyName("logs")]
         public List<TesTaskLog> Logs { get; set; }
 
         /// <summary>
         /// Date + time the task was created, in RFC 3339 format. This is set by the system, not the client.
         /// </summary>
         /// <value>Date + time the task was created, in RFC 3339 format. This is set by the system, not the client.</value>
-        [DataMember(Name = "creation_time")]
+        [JsonPropertyName("creation_time")]
         public DateTimeOffset? CreationTime { get; set; }
 
         /// <summary>
