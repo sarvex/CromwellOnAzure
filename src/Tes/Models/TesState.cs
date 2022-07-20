@@ -13,7 +13,6 @@
 
 using System.Runtime.Serialization;
 using Newtonsoft.Json;
-using NpgsqlTypes;
 
 namespace Tes.Models
 {
@@ -36,7 +35,6 @@ namespace Tes.Models
         /// Enum QUEUEDEnum for QUEUED
         /// </summary>
         [EnumMember(Value = "QUEUED")]
-        [PgName("QUEUED")]
         QUEUEDEnum = 2,
 
         /// <summary>
